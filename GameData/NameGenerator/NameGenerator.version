@@ -1,7 +1,7 @@
 {
     "NAME"     : "Name Generator",
-    "URL"      : "TODO",
-    "DOWNLOAD" : "TODO",
+    "URL"      : "https://github.com/severedsolo/NameGenerator/blob/master/GameData/NameGenerator/NameGenerator.version",
+    "DOWNLOAD" : "https://github.com/severedsolo/NameGenerator/releases",
     "GITHUB" :
     {
         "USERNAME" : "severedsolo",

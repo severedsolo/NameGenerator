@@ -37,6 +37,13 @@ namespace NameGenerator
                 females.Add(reader);
             }
             sr.Close();
+            IEnumerable<ProtoCrewMember> crew = HighLogic.CurrentGame.CrewRoster.Crew;
+            for (int i = 0; i < crew.Count(); i++)
+            {
+                ProtoCrewMember p = crew.ElementAt(i);
+                if (p.type != ProtoCrewMember.KerbalType.Applicant) continue;
+                onKerbalAdded(p);
+            }
         }
 
         private void onKerbalAdded(ProtoCrewMember kerbal)

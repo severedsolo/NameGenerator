@@ -3,40 +3,73 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using UnityEngine;
+using System.Text;
 
 namespace NameGenerator
 {
     [KSPAddon(KSPAddon.Startup.SpaceCentre, true)]
     public class NameGenerator : MonoBehaviour
     {
-        List<string> surnames = new List<string>();
-        List<string> females = new List<string>();
-        List<string> males = new List<string>();           
+        List<string> americanSurnames = new List<string>();
+        List<string> americanFemales = new List<string>();
+        List<string> americanMales = new List<string>();
+        List<string> russianMales = new List<string>();
+        List<string> russianFemales = new List<string>();
+        List<string> russianFemaleSurnames = new List<string>();
+        List<string> russianMaleSurnames = new List<string>();
+        int counter;
+        bool validRussianData = false;
+
         System.Random r = new System.Random();
 
         void Awake()
         {
             DontDestroyOnLoad(this);
-            GameEvents.onKerbalAdded.Add(onKerbalAdded);
-            StreamReader sr = new StreamReader(KSPUtil.ApplicationRootPath + "/GameData/NameGenerator/surnames.txt");
+            GameEvents.onKerbalAddComplete.Add(onKerbalAdded);
+            StreamReader sr = new StreamReader(KSPUtil.ApplicationRootPath + "/GameData/NameGenerator/PluginData/americanSurnames.txt", Encoding.Unicode);
             string reader;
             while ((reader = sr.ReadLine()) != null)
             {
-                surnames.Add(reader);
+                americanSurnames.Add(reader);
             }
             sr.Close();
-            sr = new StreamReader(KSPUtil.ApplicationRootPath + "/GameData/NameGenerator/male.txt");
+            sr = new StreamReader(KSPUtil.ApplicationRootPath + "/GameData/NameGenerator/PluginData/americanMale.txt", Encoding.Unicode);
             while ((reader = sr.ReadLine()) != null)
             {
-                males.Add(reader);
+                americanMales.Add(reader);
             }
             sr.Close();
-            sr = new StreamReader(KSPUtil.ApplicationRootPath + "/GameData/NameGenerator/female.txt");
+            sr = new StreamReader(KSPUtil.ApplicationRootPath + "/GameData/NameGenerator/PluginData/americanFemale.txt", Encoding.Unicode);
             while ((reader = sr.ReadLine()) != null)
             {
-                females.Add(reader);
+                americanFemales.Add(reader);
             }
             sr.Close();
+            sr = new StreamReader(KSPUtil.ApplicationRootPath + "/GameData/NameGenerator/PluginData/russianMale.txt", Encoding.Unicode);
+            while ((reader = sr.ReadLine()) != null)
+            {
+                russianMales.Add(reader);
+            }
+            sr.Close();
+            sr = new StreamReader(KSPUtil.ApplicationRootPath + "/GameData/NameGenerator/PluginData/russianFemale.txt", Encoding.Unicode);
+            while ((reader = sr.ReadLine()) != null)
+            {
+                russianFemales.Add(reader);
+            }
+            sr.Close();
+            sr = new StreamReader(KSPUtil.ApplicationRootPath + "/GameData/NameGenerator/PluginData/russianFemaleSurnames.txt", Encoding.Unicode);
+            while ((reader = sr.ReadLine()) != null)
+            {
+                russianFemaleSurnames.Add(reader);
+            }
+            sr.Close();
+            sr = new StreamReader(KSPUtil.ApplicationRootPath + "/GameData/NameGenerator/PluginData/russianMaleSurnames.txt", Encoding.Unicode);
+            while ((reader = sr.ReadLine()) != null)
+            {
+                russianMaleSurnames.Add(reader);
+            }
+            sr.Close();
+            if (russianMales.Count > 0 && russianFemales.Count > 0) validRussianData = true;
             IEnumerable<ProtoCrewMember> crew = HighLogic.CurrentGame.CrewRoster.Crew;
             for (int i = 0; i < crew.Count(); i++)
             {
@@ -48,32 +81,44 @@ namespace NameGenerator
 
         private void onKerbalAdded(ProtoCrewMember kerbal)
         {
-            if (kerbal.name == "Jebediah Kerman" || kerbal.name == "Bob Kerman" || kerbal.name == "Bill Kerman" || kerbal.name == "Valentina Kerman") return;
-            IEnumerable<ProtoCrewMember> crew = HighLogic.CurrentGame.CrewRoster.Crew;
+            counter = 0;
+            if (kerbal.isHero) return;
             bool nameFound = false;
-            string surname = surnames.ElementAt(r.Next(0, surnames.Count()));
+            bool russian = (r.NextDouble() < 0.5 && validRussianData);
+            string surname = "";
+            if(!russian) surname = americanSurnames.ElementAt(r.Next(0, americanSurnames.Count()));
+            else
+            {
+                if(kerbal.gender == ProtoCrewMember.Gender.Male) surname = russianMaleSurnames.ElementAt(r.Next(0, russianMaleSurnames.Count()));
+                else surname = russianFemaleSurnames.ElementAt(r.Next(0, russianFemaleSurnames.Count()));
+            }
             string forename = "";
             while (!nameFound)
             {
                 nameFound = true;
                 if(kerbal.gender == ProtoCrewMember.Gender.Male)
                 {
-                    forename = males.ElementAt(r.Next(0, males.Count()));
+                    if(!russian)forename = americanMales.ElementAt(r.Next(0, americanMales.Count()));
+                    else forename = russianMales.ElementAt(r.Next(0, russianMales.Count()));
                 }
                 else
                 {
-                    forename = females.ElementAt(r.Next(0, females.Count()));
+                    if(!russian) forename = americanFemales.ElementAt(r.Next(0, americanFemales.Count()));
+                    else forename = russianFemales.ElementAt(r.Next(0, russianFemales.Count()));
                 }
                 name = forename + " " + surname;
-                for(int i = 0; i<crew.Count();i++)
+                IEnumerable<ProtoCrewMember> crew = HighLogic.CurrentGame.CrewRoster.Kerbals();
+                for (int i = 0; i<crew.Count(); i++)
                 {
                     ProtoCrewMember p = crew.ElementAt(i);
                     if (p.name == name)
                     {
                         nameFound = false;
+                        counter++;
                         break;
                     }
                 }
+                if (counter > 50) nameFound = true;
             }
             kerbal.ChangeName(name);
         }
